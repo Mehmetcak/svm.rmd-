@@ -1,0 +1,88 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+
+library(tidyverse)
+library(dplyr)
+library(plotly)
+library(caret)
+library(e1071)
+library(kernlab)
+
+df<-Skyserver_SQL2_27_2018_6_51_39_PM
+
+head(df)
+
+glimpse(df)
+
+df$class<-as.factor(df$class)
+
+colSums(is.na(df))
+
+p1 <- ggplotly(ggplot(df, aes(class, fill = class)) + geom_bar() + theme_classic())
+
+
+
+
+```
+
+```{r}
+set.seed(100)
+
+index<-createDataPartition(df$class, p=0.8,times = 1,list = FALSE)
+
+train<-df[index,]
+
+test<-df[-index,]
+
+
+head(test)
+
+
+
+
+
+```
+
+```{r}
+
+svm_fit<-ksvm(class~., kernel="vanilladot", data=train, scale=FALSE)
+
+
+Eval_linear<- predict(svm_fit, test[,-11])
+
+ confusionMatrix(Eval_linear,test$class)
+
+
+```
+
+##model tune
+```{r}
+trainControl <- trainControl(method="cv", number=5)
+metric <- "Accuracy"
+set.seed(100)
+grid <- expand.grid(.sigma=c(0.01,0.02,0.03,0.04), .C=c(5,6,7,8) )
+
+fit.svm <- train(class~., data=train, method="svmRadial", metric=metric, 
+                 tuneGrid=grid, trControl=trainControl)
+
+plot(fit.svm)
+
+
+
+```
+```{r}
+
+evaluate_kernel_test<- predict(fit.svm, test[, -11])
+confusionMatrix(evaluate_kernel_test, test$class)
+
+
+
+```
+
+
+
+
